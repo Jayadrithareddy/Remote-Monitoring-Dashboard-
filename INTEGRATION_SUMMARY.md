@@ -418,4 +418,4 @@ You can now monitor your equipment with the same quality as commercial SCADA sys
 
 **Ready to start?** Follow `QUICK_START.md` for 5-minute setup!
 
-**Good luck! 🚀**
+

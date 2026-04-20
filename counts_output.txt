@@ -1,0 +1,16 @@
+{
+  "Total System Assets (1).csv": 0,
+  "commissioneddevices (4).csv": 0,
+  "Yet To Commission.csv": 0,
+  "Assets With KRM List (1).csv": 0,
+  "Active KRM.csv": 0,
+  "INACTIVE KRM.csv": 0,
+  "Service Soon List.csv": 518,
+  "Service Now List.csv": 12298,
+  "Service Due List.csv": 4570,
+  "Service Over Due List.csv": 7434,
+  "Oil Change Required List.csv": 12567,
+  "Check Battery .csv": 691,
+  "DEF Filling List.csv": 60,
+  "Recurring Alarm Equipment.csv": 10925
+}

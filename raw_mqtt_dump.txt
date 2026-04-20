@@ -1,0 +1,6 @@
+
+{"Gen-ID":"100661466","
+--Monitoring Parameters":{"Fuel Level":63,"Battery Voltage":13.8,"Hrs":712,"kWh":356.00,"DEF Level":0,"Control On Time":0,"Battery Health":0,"DEF Level Bank 2":0},"
+--Engine Parameters":{"Coolant Temperature":85,"Engine Speed":1503,"Load %":0"Oil Temperature":0,"Oil Pressure":0,"Ambient Temperature %":0},"
+--Alternator Parameters":{"GenVL1-L2":0"GenVL2-L3":0"GenVL1-L3":0"Genset Current L1":0"Genset Current L2":0"Genset Current L3":0},"
+--Operator Inducement":{"TimeL1":0"TimeL3":0}}

@@ -1,0 +1,139 @@
+====================================
+SIMPLE NODE-RED SETUP FOR LIVE DATA
+====================================
+
+🎯 GOAL: Get MQTT data into React Dashboard
+
+📌 3 SIMPLE STEPS:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 1: Add MQTT Input in Node-RED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Open Node-RED: http://localhost:1880
+2. Drag "mqtt in" node from left panel
+3. Double-click it and configure:
+   
+   Server: 127.0.0.1:1883
+   Topic: Jyo/data
+   QoS: 0
+   Output: auto-detect (JSON object)
+
+4. Click "Done"
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 2: Create HTTP Endpoint
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Drag "http in" node
+2. Configure:
+   Method: GET
+   URL: /livedata
+
+3. Drag "http response" node
+4. Connect: [http in] → [http response]
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 3: Store & Serve Data
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Drag "function" node between MQTT and HTTP
+2. Name it: "Store Data"
+3. Paste this code:
+
+   flow.set('latestData', msg.payload);
+   return msg;
+
+4. Connect like this:
+
+   [MQTT in] → [Store Function]
+   
+   [HTTP in] → [Get Function] → [HTTP response]
+
+5. Add another "function" node (Get Data):
+
+   msg.payload = flow.get('latestData') || {
+     BatteryVoltage: 0,
+     OilPressure: 0,
+     EngineSpeed: 0
+   };
+   return msg;
+
+6. Click DEPLOY (red button top-right)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ TEST IT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Open browser:
+http://localhost:1880/livedata
+
+You should see:
+{
+  "BatteryVoltage": 1500,
+  "OilPressure": 94,
+  "EngineSpeed": 39
+}
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚀 DASHBOARD WILL AUTO-CONNECT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The React dashboard already has code to:
+- Poll http://localhost:1880/livedata every 1 second
+- Display data in beautiful gauge cards
+- Show connection status
+
+
+━━━━━━━━━━━━━━━━━━━━━━━��━━━━━━━━━━
+📊 DATA FLOW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+C2000 → MQTT Broker → Python Bridge → Local Broker
+         ↓
+    Node-RED (Store in memory)
+         ↓
+    HTTP Endpoint /livedata
+         ↓
+    React Dashboard (Polls every 1s)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 VISUAL NODE-RED FLOW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    ┌──────────┐
+    │ MQTT in  │
+    │Jyo/data  │
+    └────┬─────┘
+         │
+         v
+    ┌──────────────┐
+    │  Function    │
+    │ Store Data   │
+    └──────────────┘
+
+
+    ┌──────────┐    ┌──────────┐    ┌──────────┐
+    │ HTTP in  │───>│ Function │───>│HTTP resp │
+    │/livedata │    │ Get Data │    │          │
+    └──────────┘    └──────────┘    └──────────┘
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💡 IMPORTANT NOTES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✓ Make sure Mosquitto broker is running
+✓ Run your Python bridge script
+✓ Node-RED must be running
+✓ Dashboard will show "Connected" when working
+✓ If not connected, shows demo data
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Done! Your live data should now appear in the dashboard! 🎉

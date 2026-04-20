@@ -1,0 +1,207 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    LIVE MQTT DATA ARCHITECTURE                                ║
+║              Modern HMI Equipment Dashboard Integration                       ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          LAPTOP 1 (C2000 Device)                             │
+│                                                                               │
+│  ┌─────────────────┐                                                         │
+│  │   C2000 Board   │                                                         │
+│  │  (TI Processor) │  Publishes equipment data                              │
+│  │                 │  (Battery, Oil, Speed, etc.)                           │
+│  └────────┬────────┘                                                         │
+│           │                                                                   │
+│           │ MQTT                                                              │
+│           ▼                                                                   │
+│  ┌─────────────────┐                                                         │
+│  │     Python      │                                                         │
+│  │   Publisher     │  Topic: "Jyo/data"                                     │
+│  │                 │  Broker: test.mosquitto.org:1883                       │
+│  └────────┬────────┘                                                         │
+└───────────┼─────────────────────────────────────────────────────────────────┘
+            │
+            │ Internet
+            │
+            ▼
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                      CLOUD MQTT BROKER (Internet)                             │
+│                                                                                │
+│                    ┌───────────────────────────┐                             │
+│                    │   test.mosquitto.org      │                             │
+│                    │   Port: 1883              │                             │
+│                    │   Topic: Jyo/data         │                             │
+│                    └─────────────┬─────────────┘                             │
+└──────────────────────────────────┼───────────────────────────────────────────┘
+                                   │
+                                   │ MQTT Subscribe
+                                   │
+                                   ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         LAPTOP 2 (Development Machine)                       │
+│                                                                               │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │                     MQTT BRIDGE (Python Script)                        │  │
+│  │  ┌─────────────┐                             ┌─────────────┐          │  │
+│  │  │   Source    │   Forwards messages         │ Destination │          │  │
+│  │  │  Listener   │ ────────────────────────>  │  Publisher  │          │  │
+│  │  │             │                             │             │          │  │
+│  │  │test.mosqui  │                             │ 127.0.0.1:  │          │  │
+│  │  │tto.org      │                             │ 1883        │          │  │
+│  │  └─────────────┘                             └──────┬──────┘          │  │
+│  └────────────────────────────────────────────────────┼─────────────────┘  │
+│                                                        │                     │
+│                                                        ▼                     │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │               LOCAL MQTT BROKER (Mosquitto)                            │  │
+│  │                                                                         │  │
+│  │                  ┌─────────────────────┐                               │  │
+│  │                  │   127.0.0.1:1883    │                               │  │
+│  │                  │   Topic: Jyo/data   │                               │  │
+│  │                  └──────────┬──────────┘                               │  │
+│  └─────────────────────────────┼───────────────────────────────────────────┘│
+│                                │                                             │
+│                                │ MQTT Subscribe                              │
+│                                ▼                                             │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │                         NODE-RED (localhost:1880)                      │  │
+│  │                                                                         │  │
+│  │  ┌──────────┐   ┌──────────┐   ┌──────────────┐                       │  │
+│  │  │ MQTT In  │──>│ Function │──>│ Flow Context │                       │  │
+│  │  │Jyo/data  │   │  Store   │   │  (Memory)    │                       │  │
+│  │  └──────────┘   └──────────┘   └──────────────┘                       │  │
+│  │                                                                         │  │
+│  │  ┌──────────┐   ┌──────────┐   ┌──────────┐                           │  │
+│  │  │ HTTP In  │──>│ Function │──>│HTTP resp │                           │  │
+│  │  │/livedata │   │   Get    │   │          │                           │  │
+│  │  └──────────┘   └──────────┘   └────┬─────┘                           │  │
+│  └───────────────────────────────────────┼─────────────────────────────────┘│
+│                                          │                                   │
+│                                          │ HTTP GET                          │
+│                                          │ Every 1 second                    │
+│                                          ▼                                   │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │                   REACT DASHBOARD (localhost:5173)                     │  │
+│  │                                                                         │  │
+│  │  ┌─────────────────────────────────────────────────────────────────┐  │  │
+│  │  │                    LiveDataPanel Component                       │  │  │
+│  │  │                                                                   │  │  │
+│  │  │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐            │  │  │
+│  │  │  │⚡Battery│  │💧Oil    │  │⚙️ Speed │  │🌡️ Temp  │            │  │  │
+│  │  │  │ 1500mV  │  │ 94 bar  │  │ 39 RPM  │  │ 85°C    │            │  │  │
+│  │  │  │ ████▓░  │  │ █████▓  │  │ ███▓░░  │  │ ████▓░  │            │  │  │
+│  │  │  └─────────┘  └─────────┘  └─────────┘  └─────────┘            │  │  │
+│  │  │                                                                   │  │  │
+│  │  │  Status: 🟢 Connected                                            │  │  │
+│  │  │  Last Update: 14:23:45                                           │  │  │
+│  │  │                                                                   │  │  │
+│  │  │  Raw MQTT Data Stream:                                           │  │  │
+│  │  │  {                                                                │  │  │
+│  │  │    "BatteryVoltage": 1500,                                       │  │  │
+│  │  │    "OilPressure": 94,                                            │  │  │
+│  │  │    "EngineSpeed": 39,                                            │  │  │
+│  │  │    "Temperature": 85                                             │  │  │
+│  │  │  }                                                                │  │  │
+│  │  └───────────────────────────────────────────────────────────────────┘  │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                            DATA FLOW SEQUENCE
+═══════════════════════════════════════════════════════════════════════════════
+
+ 1. C2000 reads sensor data
+        ↓
+ 2. Python publisher sends to test.mosquitto.org
+        ↓
+ 3. MQTT Bridge receives from cloud
+        ↓
+ 4. Bridge forwards to local Mosquitto (127.0.0.1)
+        ↓
+ 5. Node-RED receives via MQTT In node
+        ↓
+ 6. Node-RED stores in flow context (memory)
+        ↓
+ 7. React Dashboard polls HTTP endpoint (/livedata)
+        ↓
+ 8. Node-RED returns latest stored data
+        ↓
+ 9. Dashboard displays in beautiful gauge cards
+        ↓
+10. Repeat every 1 second ♻️
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                            PORTS & ENDPOINTS
+═══════════════════════════════════════════════════════════════════════════════
+
+┌─────────────────────────┬──────────────────────────────────────────────────┐
+│ Service                 │ URL / Port                                       │
+├─────────────────────────┼──────────────────────────────────────────────────┤
+│ Cloud MQTT Broker       │ test.mosquitto.org:1883                          │
+│ Local MQTT Broker       │ 127.0.0.1:1883                                   │
+│ Node-RED UI             │ http://localhost:1880                            │
+│ Node-RED HTTP Endpoint  │ http://localhost:1880/livedata                   │
+│ React Dashboard         │ http://localhost:5173                            │
+└─────────────────────────┴──────────────────────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                            MESSAGE FORMAT
+═══════════════════════════════════════════════════════════════════════════════
+
+Topic: Jyo/data
+
+Payload (JSON):
+{
+  "BatteryVoltage": 1500,    // mV (millivolts)
+  "OilPressure": 94,          // bar
+  "EngineSpeed": 39,          // RPM
+  "Temperature": 85,          // °C (Celsius)
+  "FuelLevel": 75,            // %
+  "timestamp": "2026-02-24 14:23:45"
+}
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                          COMPONENT RESPONSIBILITIES
+═══════════════════════════════════════════════════════════════════════════════
+
+Python Bridge:
+  - Subscribe to cloud MQTT
+  - Forward messages to local broker
+  - Handle reconnection
+
+Mosquitto:
+  - Act as local message broker
+  - Queue messages
+  - Deliver to Node-RED
+
+Node-RED:
+  - Receive MQTT messages
+  - Store latest data in memory
+  - Serve via HTTP endpoint
+
+React Dashboard:
+  - Poll HTTP endpoint
+  - Parse JSON data
+  - Display in gauges
+  - Show connection status
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                               BENEFITS
+═══════════════════════════════════════════════════════════════════════════════
+
+✓ Real-time monitoring (1 second updates)
+✓ Decoupled architecture (easy to modify)
+✓ Works over internet (C2000 can be remote)
+✓ Local caching (Node-RED stores latest value)
+✓ Beautiful visualization (Modern HMI design)
+✓ Scalable (add more sensors easily)
+✓ Reliable (automatic reconnection)
+
+
+═══════════════════════════════════════════════════════════════════════════════
